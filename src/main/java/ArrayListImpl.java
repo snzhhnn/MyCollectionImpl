@@ -71,6 +71,12 @@ public class ArrayListImpl<T> {
         }
     }
 
+    public void trimToSize() {
+        if (size < elementData.length) {
+            elementData = size == 0 ? EMPTY_LIST :Arrays.copyOf(elementData, size);
+        }
+    }
+
 
     public void remove(int index) {
         rangeCheck(index);
@@ -78,6 +84,7 @@ public class ArrayListImpl<T> {
         System.arraycopy(elementData, index + 1, elementData, index, numMoved);
         size--;
         elementData[size] = null;
+        automaticallyDecreaseArray();
     }
 
     public void remove(Object o) {
@@ -92,6 +99,13 @@ public class ArrayListImpl<T> {
         }
         System.arraycopy(elementData, index + 1, elementData, index, numMoved);
         elementData[--size] = null;
+        automaticallyDecreaseArray();
+    }
+
+    private void automaticallyDecreaseArray() {
+        if (size < elementData.length / 1.5 && elementData.length > 10) {
+            elementData = Arrays.copyOf(elementData, Math.toIntExact(Math.round(elementData.length / 1.5)));
+        }
     }
 
     public void addAll(Collection<? extends T> c) {
