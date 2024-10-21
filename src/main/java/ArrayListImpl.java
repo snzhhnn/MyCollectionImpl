@@ -12,13 +12,13 @@ public class ArrayListImpl<T> {
         this.elementData = EMPTY_LIST;
     }
 
-    public ArrayListImpl(int yourCapacity) {
+    public ArrayListImpl(int yourCapacity) throws IncorrectValueException {
         if (yourCapacity > 0) {
             this.elementData = new Object[DEFAULT_CAPACITY];
         } else if (yourCapacity == 0) {
             this.elementData = EMPTY_LIST;
         } else {
-            throw new IllegalArgumentException("give me non-negative value :(");
+            throw new IncorrectValueException();
         }
     }
 
@@ -71,6 +71,7 @@ public class ArrayListImpl<T> {
         }
     }
 
+======= add-decrease-array
     public void trimToSize() {
         if (size < elementData.length) {
             elementData = size == 0 ? EMPTY_LIST :Arrays.copyOf(elementData, size);
@@ -78,8 +79,14 @@ public class ArrayListImpl<T> {
     }
 
 
+======= master
     public void remove(int index) {
-        rangeCheck(index);
+        try {
+            rangeCheck(index);
+        } catch (InvalidIndexException e) {
+            System.out.println(e.getMessage());
+        }
+
         int numMoved = size - index - 1;
         System.arraycopy(elementData, index + 1, elementData, index, numMoved);
         size--;
@@ -119,8 +126,18 @@ public class ArrayListImpl<T> {
 
 
     public void addAll(int index, Collection<? extends T> c) {
-        rangeCheck(index);
-        nullCheckForCollection(c);
+        try {
+            rangeCheck(index);
+        } catch (InvalidIndexException e) {
+            System.out.println(e.getMessage());
+        }
+
+        try {
+            nullCheckForCollection(c);
+        } catch (NullValueException e) {
+            System.out.println(e.getMessage());
+        }
+
         Object[] collection = c.toArray();
         int sizeCollection = collection.length;
         if (sizeCollection == 0) return;
@@ -135,12 +152,21 @@ public class ArrayListImpl<T> {
     }
 
     public void removeAll(Collection<?> c) {
-        nullCheckForCollection(c);
+        try {
+            nullCheckForCollection(c);
+        } catch (NullValueException e) {
+            System.out.println(e.getMessage());
+        }
+
         helpMethodForRetainAndRemoveAll(c, false);
     }
 
     public void retainAll(Collection<?> c) {
-        nullCheckForCollection(c);
+        try {
+            nullCheckForCollection(c);
+        } catch (NullValueException e) {
+            System.out.println(e.getMessage());
+        }
         helpMethodForRetainAndRemoveAll(c, true);
     }
 
@@ -164,19 +190,34 @@ public class ArrayListImpl<T> {
     }
 
     public T get(int index) {
-        rangeCheck(index);
+        try {
+            rangeCheck(index);
+        } catch (InvalidIndexException e) {
+            System.out.println(e.getMessage());
+        }
+
         return (T) elementData[index];
     }
 
     public T set(int index, T element) {
-        rangeCheck(index);
+        try {
+            rangeCheck(index);
+        } catch (InvalidIndexException e) {
+            System.out.println(e.getMessage());
+        }
+
         T oldValue = (T) elementData[index];
         elementData[index] = element;
         return oldValue;
     }
 
     public void add(int index, T element) {
-        rangeCheck(index);
+        try {
+            rangeCheck(index);
+        } catch (InvalidIndexException e) {
+            System.out.println(e.getMessage());
+        }
+
         if (size == elementData.length) {
             elementData = grow(size+1);
         }
@@ -221,17 +262,22 @@ public class ArrayListImpl<T> {
     }
 
     public Object[] subList(int fromIndex, int toIndex) {
-        rangeCheck(fromIndex);
-        rangeCheck(toIndex);
+        try {
+            rangeCheck(fromIndex);
+            rangeCheck(toIndex);
+        } catch (InvalidIndexException e) {
+            System.out.println(e.getMessage());
+        }
+
         return Arrays.copyOfRange(elementData, fromIndex, toIndex+1);
     }
 
-    private void rangeCheck(int index) {
+    private void rangeCheck(int index) throws InvalidIndexException {
         if (index >= size || index < 0)
-            throw new IndexOutOfBoundsException("index out of bounds-_-");
+            throw new InvalidIndexException();
     }
 
-    private void nullCheckForCollection(Collection<?> c) {
-        if (c == null) throw new NullPointerException("it's so sad, but null :)");
+    private void nullCheckForCollection(Collection<?> c) throws NullValueException {
+        if (c == null) throw new NullValueException();
     }
 }
