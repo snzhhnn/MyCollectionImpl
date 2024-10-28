@@ -1,8 +1,13 @@
 
+import exception.IncompatibleClassException;
+import exception.IncorrectValueException;
+
 import java.util.*;
 
 //лучше не спрашивать, что я курила, когда писала это
 //зато работает)))))))))))))))))))))
+
+//внезапный дэп
 public class HashMapImpl<K, V> {
 
     private static final int DEFAULT_CAPACITY = 16;
@@ -19,18 +24,18 @@ public class HashMapImpl<K, V> {
         capacity = DEFAULT_CAPACITY;
     }
 
-    public HashMapImpl(int yourCapacity) {
+    public HashMapImpl(int yourCapacity) throws IncorrectValueException {
         this(yourCapacity, DEFAULT_LOAD_FACTOR);
     }
 
-    public HashMapImpl(int yourCapacity, float loadFactor) {
+    public HashMapImpl(int yourCapacity, float loadFactor) throws IncorrectValueException {
         if (yourCapacity > 0) {
             table = new Element[yourCapacity];
             capacity = yourCapacity;
         } else if(yourCapacity == 0) {
             table = new Element[DEFAULT_CAPACITY];
             capacity = DEFAULT_CAPACITY;
-        } else throw new IllegalArgumentException("give me non-negative value :(");
+        } else throw new IncorrectValueException();
     }
 
     private abstract class Element<K, V> {
@@ -131,7 +136,6 @@ public class HashMapImpl<K, V> {
         public boolean containsValue(Object value) {
             for (Node node: linkedList) {
                 if (value.equals(node.getValue())) return true;
-                System.out.println(value.equals(node.getValue()) + " " + value);
             }
             return false;
         }
@@ -243,12 +247,12 @@ public class HashMapImpl<K, V> {
         if (table[index] != null) {
             try {
                 whereKey = ((LinkedNode) table[index]).containsKey(key);
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
 
 
             try {
                 whereKey = ((TreeNode) table[index]).containsKey(key);
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
 
             whereKey = ((Node)table[index]).getKey().equals(key);
         }
@@ -263,15 +267,15 @@ public class HashMapImpl<K, V> {
                 try {
                     whereValue = ((LinkedNode) table[i]).containsValue(value);
                     break;
-                } catch (ClassCastException e) {}
+                } catch (IncompatibleClassException e) {}
                 try {
                     whereValue = ((TreeNode) table[i]).containsValue(value);
                     break;
-                } catch (ClassCastException e) {}
+                } catch (IncompatibleClassException e) {}
                 try {
                     whereValue = ((Node) table[i]).getValue().equals(value);
                     break;
-                } catch (ClassCastException e) {}
+                } catch (IncompatibleClassException e) {}
             }
         }
         return whereValue;
@@ -318,7 +322,7 @@ public class HashMapImpl<K, V> {
                         if (node.hash() == hash && node.getKey() == key || key.equals(node.getKey())) {
                             ((Node)table[i]).setValue(value);
                         }
-                    } catch (ClassCastException e) {}
+                    } catch (IncompatibleClassException e) {}
 
                     try {
                         linkedNode = (LinkedNode) table[i];
@@ -327,7 +331,7 @@ public class HashMapImpl<K, V> {
                         } else {
                             linkedNode.addNode(newNode);
                         }
-                    } catch (ClassCastException e) {}
+                    } catch (IncompatibleClassException e) {}
 
                     try {
                         treeNode = (TreeNode) table[i];
@@ -336,7 +340,7 @@ public class HashMapImpl<K, V> {
                         } else {
                             treeNode.addNode(newNode);
                         }
-                    } catch (ClassCastException e) {}
+                    } catch (IncompatibleClassException e) {}
                 }
 
             }
@@ -359,7 +363,7 @@ public class HashMapImpl<K, V> {
                 size++;
                 return true;
             }
-        } catch (ClassCastException e) {}
+        } catch (IncompatibleClassException e) {}
 
         try {
             if ((table[index]) != null && ((TreeNode) table[index]).size() >= USE_TREE) {
@@ -367,7 +371,7 @@ public class HashMapImpl<K, V> {
                 size++;
                 return true;
             }
-        } catch (ClassCastException e) {}
+        } catch (IncompatibleClassException e) {}
 
         return false;
     }
@@ -379,7 +383,7 @@ public class HashMapImpl<K, V> {
                 size++;
                 return true;
             }
-        } catch (ClassCastException e) {}
+        } catch (IncompatibleClassException e) {}
 
         try {
             if ((table[index]) != null && ((TreeNode) table[index]).size() <= USE_LINKED_LIST) {
@@ -387,7 +391,7 @@ public class HashMapImpl<K, V> {
                 size++;
                 return true;
             }
-        } catch (ClassCastException e) {}
+        } catch (IncompatibleClassException e) {}
 
         return false;
     }
@@ -420,11 +424,11 @@ public class HashMapImpl<K, V> {
 
         try {
             ((LinkedNode) table[index]).removeNode(key);
-        } catch (ClassCastException e) {}
+        } catch (IncompatibleClassException e) {}
 
         try {
             ((TreeNode) table[index]).removeNode(key);
-        } catch (ClassCastException e) {}
+        } catch (IncompatibleClassException e) {}
 
         table[index] = null;
     }
@@ -440,17 +444,17 @@ public class HashMapImpl<K, V> {
             if (table[i] != null) {
                 try {
                     result.addAll(((LinkedNode) table[i]).keySet());
-                } catch (ClassCastException e) {}
+                } catch (IncompatibleClassException e) {}
 
 
                 try {
                     result.addAll(((TreeNode) table[i]).keySet());
-                } catch (ClassCastException e) {}
+                } catch (IncompatibleClassException e) {}
 
 
                 try {
                     result.add((K) ((Node) table[i]).getKey());
-                } catch (ClassCastException e) {}
+                } catch (IncompatibleClassException e) {}
             }
         }
         return result;
@@ -462,15 +466,15 @@ public class HashMapImpl<K, V> {
 
             try {
                 result.addAll(((LinkedNode) table[i]).values());
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
 
             try {
                 result.addAll(((TreeNode) table[i]).values());
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
 
             try {
                 result.add((V) ((Node) table[i]).getValue());
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
         }
         return result;
     }
