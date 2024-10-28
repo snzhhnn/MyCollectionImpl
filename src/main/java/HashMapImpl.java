@@ -1,8 +1,13 @@
 
+import exception.IncompatibleClassException;
+import exception.IncorrectValueException;
+
 import java.util.*;
 
 //лучше не спрашивать, что я курила, когда писала это
 //зато работает)))))))))))))))))))))
+
+//внезапный дэп
 public class HashMapImpl<K, V> {
 
     private static final int DEFAULT_CAPACITY = 16;
@@ -19,18 +24,18 @@ public class HashMapImpl<K, V> {
         capacity = DEFAULT_CAPACITY;
     }
 
-    public HashMapImpl(int yourCapacity) {
+    public HashMapImpl(int yourCapacity) throws IncorrectValueException {
         this(yourCapacity, DEFAULT_LOAD_FACTOR);
     }
 
-    public HashMapImpl(int yourCapacity, float loadFactor) {
+    public HashMapImpl(int yourCapacity, float loadFactor) throws IncorrectValueException {
         if (yourCapacity > 0) {
             table = new Element[yourCapacity];
             capacity = yourCapacity;
         } else if(yourCapacity == 0) {
             table = new Element[DEFAULT_CAPACITY];
             capacity = DEFAULT_CAPACITY;
-        } else throw new IllegalArgumentException("give me non-negative value :(");
+        } else throw new IncorrectValueException();
     }
 
     private abstract class Element<K, V> {
@@ -462,15 +467,15 @@ public class HashMapImpl<K, V> {
 
             try {
                 result.addAll(((LinkedNode) table[i]).values());
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
 
             try {
                 result.addAll(((TreeNode) table[i]).values());
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
 
             try {
                 result.add((V) ((Node) table[i]).getValue());
-            } catch (ClassCastException e) {}
+            } catch (IncompatibleClassException e) {}
         }
         return result;
     }
