@@ -17,6 +17,8 @@ public class HashMapImpl<K, V> {
     private int size;
     private Object[] table;
     private int capacity;
+    private int threshold;
+    private static final int MAXIMUM_CAPACITY = 1 << 30;
 
 
     public HashMapImpl() {
@@ -304,46 +306,15 @@ public class HashMapImpl<K, V> {
     public Object put(Object key, Object value) {
         int hash = hash(key);
         int index = hash % table.length;
-        Node<K, V> node;
-        LinkedNode linkedNode;
-        TreeNode treeNode;
         Node<K, V> newNode = (Node<K, V>) new Node<>(hash, key, value);
         if (table == null) {
             table = new Element[DEFAULT_CAPACITY];
         }
-        if (size == capacity / DEFAULT_LOAD_FACTOR) {
+        if (size >= threshold) {
             resize();
         }
         if (size > 0) {
-            for(int i=0;i < size;i++) {
-                node = (Node<K, V>) table[i];
-                if (node != null) {
-                    try {
-                        if (node.hash() == hash && node.getKey() == key || key.equals(node.getKey())) {
-                            ((Node)table[i]).setValue(value);
-                        }
-                    } catch (IncompatibleClassException e) {}
-
-                    try {
-                        linkedNode = (LinkedNode) table[i];
-                        if (linkedNode.containsKey(key)) {
-                            linkedNode.updateNode(key, value);
-                        } else {
-                            linkedNode.addNode(newNode);
-                        }
-                    } catch (IncompatibleClassException e) {}
-
-                    try {
-                        treeNode = (TreeNode) table[i];
-                        if (treeNode.containsKey(key)) {
-                            treeNode.updateNode(key, value);
-                        } else {
-                            treeNode.addNode(newNode);
-                        }
-                    } catch (IncompatibleClassException e) {}
-                }
-
-            }
+            changeValue(hash, key, value, newNode);
         }
 
         if (!addLinkedNode(index, newNode)) {
@@ -353,6 +324,41 @@ public class HashMapImpl<K, V> {
             }
         }
         return key;
+    }
+
+    private void changeValue(int hash, Object key, Object value, Node newNode) {
+        Node<K, V> node;
+        LinkedNode linkedNode;
+        TreeNode treeNode;
+        for(int i=0;i < size;i++) {
+            node = (Node<K, V>) table[i];
+            if (node != null) {
+                try {
+                    if (node.hash() == hash && node.getKey() == key || key.equals(node.getKey())) {
+                        ((Node)table[i]).setValue(value);
+                    }
+                } catch (IncompatibleClassException e) {}
+
+                try {
+                    linkedNode = (LinkedNode) table[i];
+                    if (linkedNode.containsKey(key)) {
+                        linkedNode.updateNode(key, value);
+                    } else {
+                        linkedNode.addNode(newNode);
+                    }
+                } catch (IncompatibleClassException e) {}
+
+                try {
+                    treeNode = (TreeNode) table[i];
+                    if (treeNode.containsKey(key)) {
+                        treeNode.updateNode(key, value);
+                    } else {
+                        treeNode.addNode(newNode);
+                    }
+                } catch (IncompatibleClassException e) {}
+            }
+
+        }
     }
 
     private boolean addLinkedNode(int index, Node newNode) {
@@ -396,26 +402,60 @@ public class HashMapImpl<K, V> {
         return false;
     }
 
-    private void resize() {
+    private Object[] resize() {
         int buckets = table.length;
-        Element[] data = (Element[]) table;
+        Object[] data = table;
+        if (buckets == MAXIMUM_CAPACITY) {
+            threshold = Integer.MAX_VALUE;
+            return data;
+        }
         capacity = buckets * 2;
-        table = new Element[capacity];
+        threshold = (int) (capacity * DEFAULT_LOAD_FACTOR);
 
-        Element<K, V> node;
+        table = new Element[capacity];
+        size = 0;
         for (int i=0;i< data.length;i++) {
-            node = (Node<K, V>) data[i];
-            if (!addLinkedNode(i, (Node<K, V>) node)) {
-                if (!addTreeNode(i, (Node<K, V>) node)) {
-                    table[i] = node;
-                    size++;
-                }
+            transfer(table, (Element<K, V>) table[i], i);
+        }
+
+        return table;
+    }
+
+    private void transfer(Object[] table, Element<K, V> element, int index) {
+        Node<K, V> newNode = createNode(element);
+        if (size > 0) {
+            try {
+                element = (Node<K, V>) table[index];
+                changeValue(element.hashCode(), element.getKey(), element.getValue(), newNode);
+            } catch (IncompatibleClassException e) {}
+
+            try {
+                element = (LinkedNode) table[index];
+                changeValue(element.hashCode(), element.getKey(), element.getValue(), newNode);
+            } catch (IncompatibleClassException e) {}
+
+            try {
+                element = (TreeNode) table[index];
+                changeValue(element.hashCode(), element.getKey(), element.getValue(), newNode);
+            } catch (IncompatibleClassException e) {}
+        }
+
+
+        if (!addLinkedNode(index, newNode)) {
+            if (!addTreeNode(index, newNode)) {
+                table[index] = newNode;
+                size++;
             }
         }
     }
 
+    private Node<K, V> createNode( Element<K, V> element) {
+        return new Node<>(element.hashCode(), element.getKey(), element.getValue());
+    }
+
+
     private int hash(Object o) {
-        return o == null ? 0 : o.hashCode();
+        return o == null ? 0 : o.hashCode() >>> 16;
     }
 
     public void remove(Object key) {
